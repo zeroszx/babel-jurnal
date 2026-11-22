@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.openalex.org; frame-src file:; object-src file:" />
+  <title>Babel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="nav">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M5 3h10a4 4 0 0 1 4 4v13a1 1 0 0 1-1.45.9L14 19.1l-3.55 1.8A1 1 0 0 1 9 20V7a2 2 0 0 0-2-2H5a1 1 0 0 1 0-2Zm-1 4a2 2 0 0 1 2-2v14a1 1 0 0 1-2 0V7Z"/></svg>
+      <span>Babel</span>
+    </div>
+    <button class="nav-btn active" data-view="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Cari Jurnal</button>
+    <button class="nav-btn" data-view="library"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Perpustakaan <span class="badge" id="lib-count">0</span></button>
+    <button class="nav-btn" data-view="analysis"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="5" y="12" width="3" height="6"/><rect x="10.5" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/></svg>Analisis</button>
+    <button class="nav-btn" data-view="settings"><svg class="i" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Pengaturan</button>
+    <div class="nav-foot">Data pencarian: OpenAlex<br />Analisis AI: <span id="nav-provider">Gemini</span></div>
+  </aside>
+
+  <main>
+    <!-- ================= CARI ================= -->
+    <section class="view active" id="view-search">
+      <h1 class="page-title">Cari Jurnal</h1>
+      <form class="searchbar" id="search-form">
+        <div class="search-input">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Cari topik, judul, atau penulis…" autocomplete="off" />
+        </div>
+        <select id="sort" title="Urutkan">
+          <option value="relevance_score:desc">Paling relevan</option>
+          <option value="cited_by_count:desc">Paling banyak dikutip</option>
+          <option value="publication_date:desc">Terbaru</option>
+        </select>
+        <input id="year-from" type="number" min="1800" max="2100" placeholder="Dari thn" title="Tahun mulai" />
+        <input id="year-to" type="number" min="1800" max="2100" placeholder="Sampai" title="Tahun akhir" />
+        <label class="switch"><input id="oa-only" type="checkbox" /><span class="track"></span>Akses terbuka</label>
+        <button class="btn primary" type="submit">Cari</button>
+      </form>
+      <div class="split">
+        <div class="list-col">
+          <div class="list-title"><h2>Hasil pencarian</h2><span class="count" id="search-count"></span></div>
+          <div class="list-head" id="search-head">Masukkan kata kunci untuk mulai mencari dari 250+ juta karya ilmiah.</div>
+          <div class="list" id="search-results"></div>
+          <div class="more-wrap"><button class="btn" id="search-more" hidden>Muat lebih banyak</button></div>
+        </div>
+        <div class="detail" id="search-detail"><div class="empty">Pilih salah satu hasil untuk melihat detailnya.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= PERPUSTAKAAN ================= -->
+    <section class="view" id="view-library">
+      <h1 class="page-title">Perpustakaan</h1>
+      <div class="toolbar">
+        <div class="search-input">
+          <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="lib-q" type="search" placeholder="Cari judul, penulis, catatan, tag…" />
+        </div>
+        <select id="lib-status">
+          <option value="">Semua status</option>
+          <option value="unread">Belum dibaca</option>
+          <option value="reading">Sedang dibaca</option>
+          <option value="done">Selesai</option>
+        </select>
+        <select id="lib-tag"><option value="">Semua tag</option></select>
+        <select id="lib-sort">
+          <option value="added">Terakhir ditambah</option>
+          <option value="year">Tahun terbit</option>
+          <option value="cited">Jumlah kutipan</option>
+          <option value="title">Judul A–Z</option>
+          <option value="rating">Rating</option>
+        </select>
+        <span class="spacer"></span>
+        <button class="btn" id="add-doi">+ DOI</button>
+        <button class="btn" id="import-pdf">+ Impor PDF</button>
+        <div class="dropdown">
+          <button class="btn" id="export-btn">Ekspor ▾</button>
+          <div class="menu" id="export-menu" hidden>
+            <button data-fmt="bib">BibTeX (.bib)</button>
+            <button data-fmt="ris">RIS (Mendeley/Zotero/EndNote)</button>
+            <button data-fmt="apa">Daftar pustaka APA (.txt)</button>
+          </div>
+        </div>
+      </div>
+      <div class="split">
+        <div class="list-col">
+          <div class="list-title"><h2>Koleksi</h2><span class="count" id="lib-count2"></span></div>
+          <div class="list-head" id="lib-head"></div>
+          <div class="list" id="lib-list"></div>
+        </div>
+        <div class="detail" id="lib-detail"><div class="empty">Pilih paper untuk melihat detail, catatan, dan tag.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= BACA ================= -->
+    <section class="view" id="view-reader">
+      <div class="reader-head">
+        <button class="btn" id="reader-back">← Kembali</button>
+        <div class="reader-title" id="reader-title"></div>
+      </div>
+      <div class="reader-body">
+        <div class="reader-doc" id="reader-doc"></div>
+        <div class="reader-side">
+          <div class="tabs">
+            <button class="tab active" data-tab="notes">Catatan</button>
+            <button class="tab" data-tab="ai">Analisis AI</button>
+          </div>
+          <div class="tab-pane active" id="tab-notes">
+            <textarea id="reader-notes" placeholder="Tulis catatan, kutipan penting, ide… (tersimpan otomatis)"></textarea>
+          </div>
+          <div class="tab-pane" id="tab-ai">
+            <div class="ai-modes">
+              <button class="btn sm" data-mode="ringkasan">Ringkasan</button>
+              <button class="btn sm" data-mode="metodologi">Metodologi</button>
+              <button class="btn sm" data-mode="kritik">Telaah kritis</button>
+              <button class="btn sm" data-mode="literatur">Bahan tinjauan pustaka</button>
+            </div>
+            <div class="ai-out" id="ai-out"><div class="empty small">Pilih jenis analisis di atas, atau ajukan pertanyaan tentang paper ini di bawah.</div></div>
+            <form class="ai-ask" id="ai-ask">
+              <textarea id="ai-q" rows="2" placeholder="Tanya tentang paper ini… (Enter untuk kirim)"></textarea>
+              <div class="row">
+                <button class="btn sm" type="button" id="ai-reset" title="Mulai percakapan baru">Percakapan baru</button>
+                <span class="spacer"></span>
+                <button class="btn sm" type="button" id="ai-stop" hidden>Hentikan</button>
+                <button class="btn sm primary" type="submit" id="ai-send">Kirim</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ANALISIS ================= -->
+    <section class="view scroll" id="view-analysis">
+      <h1 class="page-title">Analisis</h1>
+      <h2>Perpustakaanku</h2>
+      <div class="cards" id="stat-cards"></div>
+      <div class="grid2">
+        <div class="panel"><h3>Paper per tahun terbit</h3><div id="chart-years"></div></div>
+        <div class="panel"><h3>Kata kunci teratas</h3><div id="chart-keywords"></div></div>
+        <div class="panel"><h3>Penulis terbanyak</h3><div id="chart-authors"></div></div>
+        <div class="panel"><h3>Jurnal / sumber terbanyak</h3><div id="chart-venues"></div></div>
+      </div>
+
+      <h2>Tren topik penelitian</h2>
+      <p class="muted">Lihat perkembangan sebuah topik di seluruh literatur ilmiah dunia: jumlah publikasi per tahun, jurnal, penulis, dan institusi paling aktif.</p>
+      <form class="searchbar" id="trend-form">
+        <input id="trend-q" type="search" placeholder="Topik, mis. &quot;stunting&quot; atau &quot;large language model&quot;" />
+        <input id="trend-from" type="number" min="1900" max="2100" value="2000" title="Mulai tahun" />
+        <button class="btn primary" type="submit">Analisis</button>
+      </form>
+      <div id="trend-result"></div>
+    </section>
+
+    <!-- ================= PENGATURAN ================= -->
+    <section class="view scroll" id="view-settings">
+      <h1 class="page-title">Pengaturan</h1>
+      <div class="panel form">
+        <h3>Penyedia analisis AI</h3>
+        <p class="muted">Pilih layanan yang dipakai untuk ringkasan, telaah kritis, dan tanya-jawab. Bisa diganti kapan saja.</p>
+        <div class="provider-opts">
+          <label class="radio"><input type="radio" name="provider" value="gemini" /> <span><b>Google Gemini</b> — gratis dengan batas kuota harian</span></label>
+          <label class="radio"><input type="radio" name="provider" value="claude" /> <span><b>Claude (Anthropic)</b> — berbayar per pemakaian</span></label>
+        </div>
+      </div>
+      <div class="panel form">
+        <h3>Google Gemini (gratis)</h3>
+        <p class="muted">Buat kunci API gratis di <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (cukup login dengan akun Google, tanpa kartu kredit). Kuota gratis dibatasi per menit dan per hari. Di paket gratis, Google dapat memakai data yang dikirim untuk meningkatkan layanannya, jadi hindari mengirim naskah rahasia yang belum terbit.</p>
+        <label>Kunci API Gemini <span id="gkey-status" class="pill"></span>
+          <input id="set-gkey" type="password" placeholder="Tempel kunci API dari Google AI Studio" autocomplete="off" />
+        </label>
+        <label>Model
+          <span class="row"><input id="set-gmodel" type="text" list="gmodel-list" placeholder="gemini-flash-latest" style="flex:1;max-width:400px" /><button class="btn" type="button" id="load-gmodels">Lihat model tersedia</button></span>
+          <datalist id="gmodel-list"></datalist>
+        </label>
+        <p class="muted" style="margin-top:-4px">Model "flash" disarankan: cepat dan kuota gratisnya paling longgar. Model "pro" lebih teliti, tetapi kuota gratisnya jauh lebih kecil.</p>
+        <div class="row"><button class="btn primary" id="save-gemini">Simpan</button><button class="btn" id="clear-gkey">Hapus kunci</button></div>
+      </div>
+      <div class="panel form">
+        <h3>Claude (Anthropic, berbayar)</h3>
+        <p class="muted">Kunci API dari <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>. Pemakaian dikenai biaya per token sesuai tarif Anthropic.</p>
+        <label>Kunci API <span id="key-status" class="pill"></span>
+          <input id="set-key" type="password" placeholder="sk-ant-…  (kosongkan untuk tidak mengubah)" autocomplete="off" />
+        </label>
+        <label>Model
+          <input id="set-model" type="text" placeholder="claude-opus-5-5" />
+        </label>
+        <div class="row"><button class="btn primary" id="save-ai">Simpan</button><button class="btn" id="clear-key">Hapus kunci</button></div>
+      </div>
+      <div class="panel form">
+        <h3>Pencarian (OpenAlex)</h3>
+        <p class="muted">Pencarian bisa dipakai tanpa pengaturan apa pun. Tanpa kunci API, kuota harian gratis OpenAlex dibagi dengan semua pengguna di jaringan yang sama. Kunci API gratis (kuota sendiri) bisa dibuat di <a href="https://openalex.org/settings/api" target="_blank">openalex.org/settings/api</a>. Keduanya opsional dan hanya dikirim ke OpenAlex.</p>
+        <label>Kunci API OpenAlex <input id="set-oakey" type="text" placeholder="opsional" autocomplete="off" /></label>
+        <label>Email <input id="set-mailto" type="email" placeholder="opsional — nama@contoh.com" /></label>
+        <div class="row"><button class="btn primary" id="save-mailto">Simpan</button></div>
+      </div>
+      <div class="panel form">
+        <h3>Data</h3>
+        <p class="muted">Perpustakaan, catatan, dan PDF disimpan lokal di: <code id="data-dir"></code></p>
+        <div class="row"><button class="btn" id="open-data">Buka folder data</button></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="modal" hidden>
+    <form class="modal-box" id="modal-form">
+      <h3 id="modal-title"></h3>
+      <input id="modal-input" type="text" />
+      <div class="row"><span class="spacer"></span><button class="btn" type="button" id="modal-cancel">Batal</button><button class="btn primary" type="submit">OK</button></div>
+    </form>
+  </div>
+  <div id="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>

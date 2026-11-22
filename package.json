@@ -1,0 +1,36 @@
+{
+  "name": "jurnalku",
+  "productName": "Babel",
+  "version": "0.3.1",
+  "description": "Pengelola dan pencari jurnal ilmiah: cari, simpan, baca, catat, dan analisis paper.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "local.jurnalku.app",
+    "productName": "Babel",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0"
+  }
+}
